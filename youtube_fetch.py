@@ -70,6 +70,9 @@ def fetch_comments(video_id, max_comments=500):
 TOP_N = 5  # most-commented videos to use PER CATEGORY
 
 CATEGORIES = {
+
+
+    
     "Home appliance": [
         "dishwasher review",
         "washing machine review",
@@ -104,3 +107,4 @@ if __name__ == "__main__":
     print(df.groupby("category").size())
     df.to_csv("raw_comments.csv", index=False)
     pd.DataFrame(used).to_csv("videos_used.csv", index=False)
+    

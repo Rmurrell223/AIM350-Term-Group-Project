@@ -1,4 +1,7 @@
+import os
+import joblib
 import pandas as pd
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -70,7 +73,27 @@ def train_and_evaluate_model(df):
         zero_division=0
     )
 
-    # Keep original keys for compatibility
+    # Select best model based on F1 score
+    if lr_f1 >= nb_f1:
+        best_model = lr_model
+        best_model_name = "Logistic Regression"
+    else:
+        best_model = nb_model
+        best_model_name = "Naive Bayes"
+
+    # Save best model and vectorizer for app.py
+    os.makedirs("models", exist_ok=True)
+
+    joblib.dump(
+        {
+            "vectorizer": vectorizer,
+            "model": best_model,
+            "model_name": best_model_name
+        },
+        "models/sentiment_pipeline.joblib"
+    )
+
+    # Results
     results = {
         "accuracy": round(lr_accuracy * 100, 2),
         "f1_score": round(lr_f1, 2),
@@ -83,7 +106,10 @@ def train_and_evaluate_model(df):
 
         "vectorizer": vectorizer,
         "model": lr_model,
-        "naive_bayes_model": nb_model
+        "naive_bayes_model": nb_model,
+
+        "best_model": best_model_name,
+        "pipeline_path": "models/sentiment_pipeline.joblib"
     }
 
     return results

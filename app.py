@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
-import joblib
 from youtube_fetch import search_videos, fetch_comments
+from sentiment_predictor import load_sentiment_model
+from sentiment_predictor import predict_sentiment
+from topic_clustering import cluster_negative_comments
 
 # Safely import preprocessing from your team's file
 try:
@@ -31,14 +33,13 @@ st.title("📊 YouTube Sentiment Tracker Dashboard")
 
 # Load the trained model saved by your team
 @st.cache_resource
-def load_sentiment_model():
+def get_sentiment_model():
     try:
-        model = joblib.load("models/sentiment_pipeline.joblib")
-        return model
-    except Exception as e:
+        return load_sentiment_model()
+    except Exception:
         return None
 
-model = load_sentiment_model()
+model_bundle = get_sentiment_model()
 
 # Keep the brand and product input fields in the sidebar
 st.sidebar.header("Search Parameters")
@@ -59,33 +60,38 @@ if search_button:
         # Preprocess and clean the dataframe using your team's function
         df_comments = clean_comments_dataframe(df_comments)
 
-        if "cleaned_comment" not in df_comments.columns and "comment" in df_comments.columns:
-            df_comments["cleaned_comment"] = df_comments["comment"]
-
         # Predict sentiments using the model
-        if model is not None and "cleaned_comment" in df_comments.columns:
-            df_comments["sentiment"] = model.predict(df_comments["cleaned_comment"])
+        if model_bundle is not None:
+            df_comments = predict_sentiment(df_comments, model_bundle)
         else:
-            df_comments["sentiment"] = "None"
+            st.error("The trained sentiment model could not be loaded.")
+            st.stop()
 
-        # Show positive, negative, neutral, and none totals
+        # Show positive, negative, and neutral totals
         st.subheader("Sentiment Summary")
-        pos_count = (df_comments["sentiment"] == "Positive").sum()
-        neg_count = (df_comments["sentiment"] == "Negative").sum()
-        neu_count = (df_comments["sentiment"] == "Neutral").sum()
-        none_count = (df_comments["sentiment"] == "None").sum()
+        pos_count = (df_comments["sentiment"] == "positive").sum()
+        neg_count = (df_comments["sentiment"] == "negative").sum()
+        neu_count = (df_comments["sentiment"] == "neutral").sum()
 
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         col1.metric("Positive 🟢", pos_count)
         col2.metric("Negative 🔴", neg_count)
         col3.metric("Neutral ⚪", neu_count)
-        col4.metric("None ❓", none_count)
 
         st.divider()
 
         # Display the classified comments table
         st.subheader("Classified YouTube Comments")
-        st.dataframe(
-            df_comments[["author", "date", "comment", "sentiment"]],
-            use_container_width=True
-        )
+        display_columns = [
+            column for column in ["date", "comment", "sentiment"]
+            if column in df_comments.columns
+        ]
+        st.dataframe(df_comments[display_columns], use_container_width=True)
+
+        negative_topics = cluster_negative_comments(df_comments)
+        if not negative_topics.empty:
+            st.subheader("Common Issues in Negative Comments")
+            st.dataframe(
+                negative_topics[["topic_group", "topic_keywords", "comment"]],
+                use_container_width=True
+            )

@@ -2,48 +2,88 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score, f1_score
+
 
 def train_and_evaluate_model(df):
     """
-    Trains a Scikit-learn sentiment classifier and tests it against 
-    the project's 75% accuracy and 0.70 F1-score benchmark.
+    Trains sentiment classifiers and compares Logistic Regression
+    against Multinomial Naive Bayes using an 80/20 train-test split.
     """
+
     if len(df) < 5:
         return None, "Not enough data to train model yet. Need at least a few samples."
 
-    # For demonstration/training, if you don't have pre-labeled data yet, 
-    # we can map basic keywords or use a small sample dataset.
-    # In production, your team will label the pulled comments.
-    
-    X = df['comment']
-    y = df['sentiment'] # Assumes a 'sentiment' column exists ('Positive', 'Negative', 'Neutral')
+    # Remove unlabeled rows
+    df = df.dropna(subset=["sentiment"])
+    df = df[df["sentiment"].astype(str).str.lower() != "none"]
 
-    # Convert text to numeric features using TF-IDF vectorizer (as proposed)
-    vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
-    X_vectorized = vectorizer.fit_transform(X)
+    if len(df) < 5:
+        return None, "Not enough labeled data after filtering."
 
-    # 80% training, 20% testing split (matching your proposal)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_vectorized, y, test_size=0.2, random_state=42
+    X = df["comment"]
+    y = df["sentiment"]
+
+    # Convert text to TF-IDF features
+    vectorizer = TfidfVectorizer(
+        max_features=1000,
+        stop_words="english"
     )
 
-    # Train a Logistic Regression classifier
-    classifier = LogisticRegression()
-    classifier.fit(X_train, y_train)
+    X_vectorized = vectorizer.fit_transform(X)
 
-    # Predict on test data
-    y_pred = classifier.predict(X_test)
+    # 80/20 split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_vectorized,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
 
-    # Calculate benchmarks
-    acc = accuracy_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+    # Logistic Regression
+    lr_model = LogisticRegression(max_iter=1000)
+    lr_model.fit(X_train, y_train)
 
+    lr_pred = lr_model.predict(X_test)
+
+    lr_accuracy = accuracy_score(y_test, lr_pred)
+    lr_f1 = f1_score(
+        y_test,
+        lr_pred,
+        average="weighted",
+        zero_division=0
+    )
+
+    # Naive Bayes
+    nb_model = MultinomialNB()
+    nb_model.fit(X_train, y_train)
+
+    nb_pred = nb_model.predict(X_test)
+
+    nb_accuracy = accuracy_score(y_test, nb_pred)
+    nb_f1 = f1_score(
+        y_test,
+        nb_pred,
+        average="weighted",
+        zero_division=0
+    )
+
+    # Keep original keys for compatibility
     results = {
-        "accuracy": round(acc * 100, 2),
-        "f1_score": round(f1, 2),
+        "accuracy": round(lr_accuracy * 100, 2),
+        "f1_score": round(lr_f1, 2),
+
+        "logistic_accuracy": round(lr_accuracy * 100, 2),
+        "logistic_f1": round(lr_f1, 2),
+
+        "naive_bayes_accuracy": round(nb_accuracy * 100, 2),
+        "naive_bayes_f1": round(nb_f1, 2),
+
         "vectorizer": vectorizer,
-        "model": classifier
+        "model": lr_model,
+        "naive_bayes_model": nb_model
     }
 
     return results

@@ -1,41 +1,67 @@
 import streamlit as st
 import pandas as pd
+import joblib
+from youtube_collector import fetch_youtube_comments
+from preprocessing import clean_text
 
-# Page Title & Configuration
-st.set_page_config(page_title="AI Sentiment & Trend Tracker", layout="wide")
+# Set up page layout
+st.set_page_config(page_title="Sentiment Tracker", layout="wide")
+st.title("📊 YouTube Sentiment Tracker Dashboard")
 
-st.title("📊 Real-Time Sentiment & Trend Tracker")
-st.markdown("Analyze live customer reviews and sentiment patterns using AI.")
+# Load the trained model saved by your team
+@st.cache_resource
+def load_sentiment_model():
+    try:
+        model = joblib.load("models/sentiment_pipeline.joblib")
+        return model
+    except Exception as e:
+        return None
 
-# Sidebar for User Inputs (matching your proposal's design)
+model = load_sentiment_model()
+
+# Keep the brand and product input fields in the sidebar
 st.sidebar.header("Search Parameters")
-brand_name = st.sidebar.text_input("Brand Name", placeholder="e.g., GE, Apple")
-product_name = st.sidebar.text_input("Product / Subject", placeholder="e.g., dishwasher, battery life")
-timeframe = st.sidebar.selectbox("Timeframe", ["Past Week", "Past Month", "Past Year", "All Time"])
+brand = st.sidebar.text_input("Brand Name", "Apple")
+product = st.sidebar.text_input("Product Name", "iPhone 15")
+search_button = st.sidebar.button("Run Analysis")
 
-run_analysis = st.sidebar.button("Run Sentiment Analysis")
-
-# Main Dashboard Area
-if run_analysis:
-    if not brand_name or not product_name:
-        st.warning("⚠️ Please enter both a Brand Name and a Product/Subject to run the analysis.")
+if search_button:
+    query = f"{brand} {product}"
+    st.info(f"Fetching comments for query: **{query}**...")
+    
+    # Connect the input to the YouTube search
+    df_comments = fetch_youtube_comments(query_term=query)
+    
+    if df_comments.empty:
+        st.warning("No comments found or API key missing.")
     else:
-        st.success(f"Searching live data for **{brand_name} ({product_name})** over the **{timeframe.lower()}**...")
+        # Preprocess and clean the text
+        df_comments["cleaned_comment"] = df_comments["comment"].apply(clean_text)
         
-        # Placeholder for where the data & machine learning results will go later
-        st.info("🔄 Connecting to data streams and running scikit-learn models...")
-        
-        # Example dummy table to show what the output will look like
-        sample_data = pd.DataFrame({
-            "Platform": ["YouTube", "YouTube", "Hacker News"],
-            "Date": ["2026-10-12", "2026-10-11", "2026-10-10"],
-            "Comment": [f"Really love the new {product_name} by {brand_name}, works great!", 
-                        f"Had some issues with {product_name}, not super happy.", 
-                        "Decent overall, standard tech performance."],
-            "Sentiment": ["Positive", "Negative", "Neutral"]
-        })
-        
-        st.subheader("Live Results & Classification")
-        st.dataframe(sample_data, use_container_width=True)
-else:
-    st.info("👈 Enter your search parameters in the sidebar and click **Run Sentiment Analysis** to begin.")
+        # Predict sentiments using the model
+        if model is not None:
+            df_comments["sentiment"] = model.predict(df_comments["cleaned_comment"])
+        else:
+            df_comments["sentiment"] = "None"
+
+        # Show positive, negative, neutral, and none totals
+        st.subheader("Sentiment Summary")
+        pos_count = (df_comments["sentiment"] == "Positive").sum()
+        neg_count = (df_comments["sentiment"] == "Negative").sum()
+        neu_count = (df_comments["sentiment"] == "Neutral").sum()
+        none_count = (df_comments["sentiment"] == "None").sum()
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Positive 🟢", pos_count)
+        col2.metric("Negative 🔴", neg_count)
+        col3.metric("Neutral ⚪", neu_count)
+        col4.metric("None ❓", none_count)
+
+        st.divider()
+
+        # Display the classified comments table
+        st.subheader("Classified YouTube Comments")
+        st.dataframe(
+            df_comments[["author", "date", "comment", "sentiment"]],
+            use_container_width=True
+        )

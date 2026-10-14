@@ -113,3 +113,15 @@ def train_and_evaluate_model(df):
     }
 
     return results
+
+if __name__ == "__main__":
+    data = pd.read_csv("data/comments_500.csv")
+    results = train_and_evaluate_model(data)
+
+    if isinstance(results, tuple):
+        print(results[1])
+    else:
+        print("Logistic Regression F1:", results["logistic_f1"])
+        print("Naive Bayes F1:", results["naive_bayes_f1"])
+        print("Selected model:", results["best_model"])
+        print("Saved at:", results["pipeline_path"])

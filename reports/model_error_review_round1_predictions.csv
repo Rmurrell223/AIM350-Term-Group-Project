@@ -1,0 +1,11 @@
+search,comment,app_label,correct_label,reason,predicted_sentiment
+Apple iPhone 15 camera,You forgot to mention it comes with a USB-C charger.😅,positive ,neutral,only mentions about charger and isnt clear praise or cirticism,negative
+Apple iPhone 15 camera,It’s crap I’m typing this on the black base model sadly it’s a $700 pos….inconvenient af!!!,positive ,negative,criticizes the phone as being bad but labeled as positive,negative
+Samsung Galaxy S24 battery,scam scacam fuuuuuuuuu,positive ,negative,says the video  is a scam with no details which is criticism,positive
+Samsung Galaxy S24 battery,"Вау, нихрена нового 🎉",positive ,negative,says there is nothing new about it which is criticism,positive
+Samsung Galaxy S24 battery,Feature available Call brief s24,positive ,neutral,talks about feature of phone without praise or criticism,positive
+Samsung Galaxy S24 battery,Oui reçu depuis hier,positive ,neutral,talks about being in possession of phone without praise or critcism ,positive
+Samsung Galaxy S24 battery,My Fancam and Call breaf are available to Samsung S24 Ultra One UI 9.0 EUY,positive ,neutral,talks about a feature being available without praise or criticism ,negative
+Samsung Galaxy S24 battery,Camera difference ❌ Price difference ✅,negative,neutral,"Praises the price and criticizes the camera, so no clear opinion",positive
+Samsung Galaxy S24 battery,The myfan cam & call brief features are available with the one ui 9 update on s24 ultra. Not sure about the dual recording please let me know about that in the comments below”,positive ,neutral,refers to aspects of the phone without praise or critcism ,negative
+Samsung Galaxy S24 battery,there no update dude who cares I checked 5 times since the 12 and besides its nothing for 24 series anyways stop hyping this up so annoying,positive ,negative,complains that there is no update for the s24 and calls the hype annoying,positive

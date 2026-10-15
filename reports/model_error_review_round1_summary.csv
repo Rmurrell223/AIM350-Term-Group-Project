@@ -1,0 +1,6 @@
+metric,value
+input_rows,20.0
+set_aside_none_rows,10.0
+scored_rows,10.0
+accuracy_percent,10.0
+macro_f1,0.0833

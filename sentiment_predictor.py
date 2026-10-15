@@ -1,5 +1,7 @@
 import joblib
 
+from preprocessing import clean_comment_text
+
 
 MODEL_PATH = "models/sentiment_pipeline.joblib"
 
@@ -19,6 +21,7 @@ def predict_sentiment(df, model_bundle=None):
     model = model_bundle["model"]
 
     result = df.copy()
-    comment_vectors = vectorizer.transform(result["comment"].fillna(""))
+    cleaned_comments = result["comment"].map(clean_comment_text)
+    comment_vectors = vectorizer.transform(cleaned_comments)
     result["sentiment"] = model.predict(comment_vectors)
     return result

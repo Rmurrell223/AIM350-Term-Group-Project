@@ -1,6 +1,7 @@
-streamlit
-pandas
-scikit-learn
-google-api-python-client
-requests
-python-dotenv
+streamlit==1.50.0
+pandas==2.3.3
+scikit-learn==1.6.1
+google-api-python-client==2.198.0
+requests==2.32.5
+python-dotenv==1.2.1
+joblib==1.5.3

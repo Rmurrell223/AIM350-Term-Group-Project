@@ -18,7 +18,7 @@ def cluster_negative_comments(df, max_clusters=3):
     try:
         comment_vectors = vectorizer.fit_transform(negative["comment"].fillna(""))
     except ValueError:
-        negative["topic_group"] = "Issue group 1"
+        negative["topic_group"] = "Comment group 1"
         negative["topic_keywords"] = "No common keywords"
         return negative
 
@@ -33,7 +33,7 @@ def cluster_negative_comments(df, max_clusters=3):
         group_keywords[group_number] = ", ".join(top_words)
 
     negative["topic_group"] = negative["cluster_number"].apply(
-        lambda value: f"Issue group {value + 1}"
+        lambda value: f"Comment group {value + 1}"
     )
     negative["topic_keywords"] = negative["cluster_number"].map(group_keywords)
     return negative

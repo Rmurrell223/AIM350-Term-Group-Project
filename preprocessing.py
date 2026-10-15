@@ -1,65 +1,40 @@
-import pandas as pd
 import re
 
+import pandas as pd
+
+
+def clean_comment_text(value):
+    if pd.isna(value):
+        return ""
+
+    text = str(value)
+    text = re.sub(r"https?://\S+|www\.\S+", "", text)
+    text = re.sub(r"\S+@\S+", "", text)
+    text = re.sub(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def clean_comments_dataframe(df):
-    """
-    Cleans raw comments according to the project proposal:
-    - Drops blank or missing comments
-    - Removes duplicate comments
-    - Strips out URLs/links, email addresses, phone numbers, and excess whitespace
-    """
+    """Remove unusable rows and basic personal/contact information."""
     if df.empty:
-        return df
+        return df.copy()
+    if "comment" not in df.columns:
+        raise ValueError("The comment column is missing.")
 
-    # 1. Drop rows with missing comments
-    df = df.dropna(subset=['comment'])
-    
-    # 2. Drop duplicate comments to keep unique insights
-    df = df.drop_duplicates(subset=['comment'])
-    
-    def clean_text(text):
-        if not isinstance(text, str):
-            return ""
-        
-        # Remove URLs (http/https/www)
-        text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
-        
-        # Remove email addresses
-        text = re.sub(r'\S+@\S+', '', text)
-        
-        # Remove phone-like numbers (e.g., 555-123-4567 or similar patterns)
-        text = re.sub(r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b', '', text)
-        
-        # Remove extra whitespace, tabs, and newlines, then trim edges
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        return text
+    cleaned = df.dropna(subset=["comment"]).copy()
+    cleaned["comment"] = cleaned["comment"].map(clean_comment_text)
+    cleaned = cleaned[cleaned["comment"] != ""]
+    cleaned = cleaned.drop_duplicates(subset=["comment"])
+    return cleaned.reset_index(drop=True)
 
-    # Apply the cleaning function to the 'comment' column
-    df['comment'] = df['comment'].apply(clean_text)
-    
-    # Drop rows that became completely empty after cleaning
-    df = df[df['comment'] != ""]
-    
-    return df
-
-# --- Local Test ---
 if __name__ == "__main__":
-    # Test data mimicking messy API results
     raw_data = pd.DataFrame({
         "platform": ["YouTube", "YouTube", "YouTube"],
         "date": ["2026-10-12", "2026-10-12", "2026-10-12"],
         "comment": [
             "Check out my channel at http://example.com for more info! Email me at test@test.com",
             "This dishwasher is amazing!! So quiet. Call me at 123-456-7890.",
-            "This dishwasher is amazing!! So quiet." # Duplicate test
+            "This dishwasher is amazing!! So quiet."
         ]
     })
-    
-    print("--- BEFORE CLEANING ---")
-    print(raw_data)
-    
-    cleaned_data = clean_comments_dataframe(raw_data)
-    
-    print("\n--- AFTER CLEANING ---")
-    print(cleaned_data)
+    print(clean_comments_dataframe(raw_data))
